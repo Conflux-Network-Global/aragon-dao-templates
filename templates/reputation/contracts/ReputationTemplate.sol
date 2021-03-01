@@ -43,12 +43,13 @@ contract ReputationTemplate is BaseTemplate, TokenCache {
         uint256[] _stakes,
         uint64[3] _votingSettings, /* supportRequired, minAcceptanceQuorum, voteDuration */
         uint64 _financePeriod,
-        bool _useAgentAsVault
+        bool _useAgentAsVault,
+        uint256 epoch
     )
         external
     {
         newToken(_tokenName, _tokenSymbol);
-        newInstance(_id, _holders, _stakes, _votingSettings, _financePeriod, _useAgentAsVault);
+        newInstance(_id, _holders, _stakes, _votingSettings, _financePeriod, _useAgentAsVault, epoch);
     }
 
     /**
@@ -77,15 +78,16 @@ contract ReputationTemplate is BaseTemplate, TokenCache {
         uint256[] memory _stakes,
         uint64[3] memory _votingSettings,
         uint64 _financePeriod,
-        bool _useAgentAsVault
+        bool _useAgentAsVault,
+        uint256 epoch
     )
         public
     {
         _validateId(_id);
         _ensureReputationSettings(_holders, _stakes, _votingSettings);
 
-        (Kernel dao, ACL acl) = _createDAO();
-        (Finance finance, Voting voting) = _setupApps(dao, acl, _holders, _stakes, _votingSettings, _financePeriod, _useAgentAsVault);
+        (Kernel dao, ACL acl) = _createDAO(epoch);
+        (Finance finance, Voting voting) = _setupApps(dao, acl, _holders, _stakes, _votingSettings, _financePeriod, _useAgentAsVault, epoch);
         _transferCreatePaymentManagerFromTemplate(acl, finance, voting);
         _transferRootPermissionsFromTemplateAndFinalizeDAO(dao, voting);
         _registerID(_id, dao);
@@ -109,15 +111,16 @@ contract ReputationTemplate is BaseTemplate, TokenCache {
         uint64[3] memory _votingSettings,
         uint64 _financePeriod,
         bool _useAgentAsVault,
-        uint256[4] memory _payrollSettings
+        uint256[4] memory _payrollSettings,
+        uint256 epoch
     )
         public
     {
         _validateId(_id);
         _ensureReputationSettings(_holders, _stakes, _votingSettings, _payrollSettings);
 
-        (Kernel dao, ACL acl) = _createDAO();
-        (Finance finance, Voting voting) = _setupApps(dao, acl, _holders, _stakes, _votingSettings, _financePeriod, _useAgentAsVault);
+        (Kernel dao, ACL acl) = _createDAO(epoch);
+        (Finance finance, Voting voting) = _setupApps(dao, acl, _holders, _stakes, _votingSettings, _financePeriod, _useAgentAsVault, epoch);
         _setupPayrollApp(dao, acl, finance, voting, _payrollSettings);
         _transferCreatePaymentManagerFromTemplate(acl, finance, voting);
         _transferRootPermissionsFromTemplateAndFinalizeDAO(dao, voting);
@@ -131,7 +134,8 @@ contract ReputationTemplate is BaseTemplate, TokenCache {
         uint256[] memory _stakes,
         uint64[3] memory _votingSettings,
         uint64 _financePeriod,
-        bool _useAgentAsVault
+        bool _useAgentAsVault,
+        uint256 epoch
     )
         internal
         returns (Finance, Voting)
@@ -139,7 +143,7 @@ contract ReputationTemplate is BaseTemplate, TokenCache {
         MiniMeToken token = _popTokenCache(msg.sender);
         Vault agentOrVault = _useAgentAsVault ? _installDefaultAgentApp(_dao) : _installVaultApp(_dao);
         Finance finance = _installFinanceApp(_dao, agentOrVault, _financePeriod == 0 ? DEFAULT_FINANCE_PERIOD : _financePeriod);
-        TokenManager tokenManager = _installTokenManagerApp(_dao, token, TOKEN_TRANSFERABLE, TOKEN_MAX_PER_ACCOUNT);
+        TokenManager tokenManager = _installTokenManagerApp(_dao, token, TOKEN_TRANSFERABLE, TOKEN_MAX_PER_ACCOUNT, epoch);
         Voting voting = _installVotingApp(_dao, token, _votingSettings);
 
         _mintTokens(_acl, tokenManager, _holders, _stakes);

@@ -1,0 +1,20 @@
+diff --git a/node_modules/@aragon/apps-token-manager/contracts/TokenManager.sol b/node_modules/@aragon/apps-token-manager/contracts/TokenManager.sol
+index f28d343..27a8c74 100644
+--- a/node_modules/@aragon/apps-token-manager/contracts/TokenManager.sol
++++ b/node_modules/@aragon/apps-token-manager/contracts/TokenManager.sol
+@@ -79,12 +79,13 @@ contract TokenManager is ITokenController, IForwarder, AragonApp {
+     function initialize(
+         MiniMeToken _token,
+         bool _transferable,
+-        uint256 _maxAccountTokens
++        uint256 _maxAccountTokens,
++        uint256 epoch
+     )
+         external
+         onlyInit
+     {
+-        initialized();
++        initialized(epoch);
+ 
+         require(_token.controller() == address(this), ERROR_TOKEN_CONTROLLER);
+ 

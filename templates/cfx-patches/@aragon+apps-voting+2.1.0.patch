@@ -1,0 +1,20 @@
+diff --git a/node_modules/@aragon/apps-voting/contracts/Voting.sol b/node_modules/@aragon/apps-voting/contracts/Voting.sol
+index d2d880c..f63acd4 100644
+--- a/node_modules/@aragon/apps-voting/contracts/Voting.sol
++++ b/node_modules/@aragon/apps-voting/contracts/Voting.sol
+@@ -80,12 +80,13 @@ contract Voting is IForwarder, AragonApp {
+         MiniMeToken _token,
+         uint64 _supportRequiredPct,
+         uint64 _minAcceptQuorumPct,
+-        uint64 _voteTime
++        uint64 _voteTime,
++        uint256 epoch
+     )
+         external
+         onlyInit
+     {
+-        initialized();
++        initialized(epoch);
+ 
+         require(_minAcceptQuorumPct <= _supportRequiredPct, ERROR_INIT_PCTS);
+         require(_supportRequiredPct < PCT_BASE, ERROR_INIT_SUPPORT_TOO_BIG);
