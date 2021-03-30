@@ -112,16 +112,16 @@ contract CompanyTemplate is BaseTemplate, TokenCache {
         uint64 _financePeriod,
         bool _useAgentAsVault,
         uint256[4] memory _payrollSettings,
-        uint256 epoch
+        uint256 _epoch
     )
         public
     {
         _validateId(_id);
         _ensureCompanySettings(_holders, _stakes, _votingSettings, _payrollSettings);
 
-        (Kernel dao, ACL acl) = _createDAO(epoch);
-        (Finance finance, Voting voting) = _setupApps(dao, acl, _holders, _stakes, _votingSettings, _financePeriod, _useAgentAsVault, epoch);
-        _setupPayrollApp(dao, acl, finance, voting, _payrollSettings);
+        (Kernel dao, ACL acl) = _createDAO(_epoch);
+        (Finance finance, Voting voting) = _setupApps(dao, acl, _holders, _stakes, _votingSettings, _financePeriod, _useAgentAsVault, _epoch);
+        _setupPayrollApp(dao, acl, finance, voting, _payrollSettings, _epoch);
         _transferCreatePaymentManagerFromTemplate(acl, finance, voting);
         _transferRootPermissionsFromTemplateAndFinalizeDAO(dao, voting);
         _registerID(_id, dao);
@@ -135,16 +135,16 @@ contract CompanyTemplate is BaseTemplate, TokenCache {
         uint64[3] memory _votingSettings,
         uint64 _financePeriod,
         bool _useAgentAsVault,
-        uint256 epoch
+        uint256 _epoch
     )
         internal
         returns (Finance, Voting)
     {
         MiniMeToken token = _popTokenCache(msg.sender);
-        Vault agentOrVault = _useAgentAsVault ? _installDefaultAgentApp(_dao) : _installVaultApp(_dao);
-        Finance finance = _installFinanceApp(_dao, agentOrVault, _financePeriod == 0 ? DEFAULT_FINANCE_PERIOD : _financePeriod);
-        TokenManager tokenManager = _installTokenManagerApp(_dao, token, TOKEN_TRANSFERABLE, TOKEN_MAX_PER_ACCOUNT, epoch);
-        Voting voting = _installVotingApp(_dao, token, _votingSettings);
+        Vault agentOrVault = _useAgentAsVault ? _installDefaultAgentApp(_dao, _epoch) : _installVaultApp(_dao, _epoch);
+        Finance finance = _installFinanceApp(_dao, agentOrVault, _financePeriod == 0 ? DEFAULT_FINANCE_PERIOD : _financePeriod, _epoch);
+        TokenManager tokenManager = _installTokenManagerApp(_dao, token, TOKEN_TRANSFERABLE, TOKEN_MAX_PER_ACCOUNT, _epoch);
+        Voting voting = _installVotingApp(_dao, token, _votingSettings, _epoch);
 
         _mintTokens(_acl, tokenManager, _holders, _stakes);
         _setupPermissions(_acl, agentOrVault, voting, finance, tokenManager, _useAgentAsVault);
@@ -152,11 +152,11 @@ contract CompanyTemplate is BaseTemplate, TokenCache {
         return (finance, voting);
     }
 
-    function _setupPayrollApp(Kernel _dao, ACL _acl, Finance _finance, Voting _voting, uint256[4] memory _payrollSettings) internal {
+    function _setupPayrollApp(Kernel _dao, ACL _acl, Finance _finance, Voting _voting, uint256[4] memory _payrollSettings, uint256 _epoch) internal {
         (address denominationToken, IFeed priceFeed, uint64 rateExpiryTime, address employeeManager) = _unwrapPayrollSettings(_payrollSettings);
         address manager = employeeManager == address(0) ? _voting : employeeManager;
 
-        Payroll payroll = _installPayrollApp(_dao, _finance, denominationToken, priceFeed, rateExpiryTime);
+        Payroll payroll = _installPayrollApp(_dao, _finance, denominationToken, priceFeed, rateExpiryTime, _epoch);
         _createPayrollPermissions(_acl, payroll, manager, _voting, _voting);
         _grantCreatePaymentPermission(_acl, _finance, payroll);
     }
