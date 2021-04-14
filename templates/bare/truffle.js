@@ -2,7 +2,7 @@ const config = require("@aragon/truffle-config-v4");
 require("dotenv").config();
 
 config.networks["cfx-testnet"] = {
-  host: "test.confluxrpc.org",
+  host: "test.confluxrpc.com",
   port: 80,
   network_id: "*",
   type: "conflux",

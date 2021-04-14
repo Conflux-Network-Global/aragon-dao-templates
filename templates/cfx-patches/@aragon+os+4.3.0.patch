@@ -296,7 +296,7 @@ index 22d79a6..026c0da 100644
  const defaultDaoFactoryAddress = process.env.DAO_FACTORY
  const defaultENSAddress = process.env.ENS
  
-+const network = process.env.NETWORK_ID || 1
++const network = Number(process.env.NETWORK_ID || 1)
 +
  module.exports = async (
    truffleExecCallback,
@@ -362,7 +362,7 @@ index 74efc32..111fc6f 100644
  const globalWeb3 = this.web3 // Not injected unless called directly via truffle
  
  const defaultOwner = process.env.OWNER
-+const network = process.env.NETWORK_ID || 1
++const network = Number(process.env.NETWORK_ID || 1)
  
  module.exports = async (
    truffleExecCallback,

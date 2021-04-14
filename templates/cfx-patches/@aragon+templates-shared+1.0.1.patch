@@ -139,7 +139,7 @@ index ec9df64..d060ec0 100644
  const deployAragonID = require('@aragon/id/scripts/deploy-beta-aragonid')
  const deployDAOFactory = require('@aragon/os/scripts/deploy-daofactory')
  
-+const network = process.env.NETWORK_ID || 1
++const network = Number(process.env.NETWORK_ID || 1)
 +
  module.exports = class TemplateDeployer {
    constructor(web3, artifacts, owner, options = { verbose: false }) {
