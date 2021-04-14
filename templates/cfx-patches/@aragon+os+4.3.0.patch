@@ -289,10 +289,19 @@ index 1fc9190..782e889 100644
  
          recoveryVaultAppId = KERNEL_DEFAULT_VAULT_APP_ID;
 diff --git a/node_modules/@aragon/os/scripts/deploy-apm.js b/node_modules/@aragon/os/scripts/deploy-apm.js
-index 22d79a6..e14a38d 100644
+index 22d79a6..026c0da 100644
 --- a/node_modules/@aragon/os/scripts/deploy-apm.js
 +++ b/node_modules/@aragon/os/scripts/deploy-apm.js
-@@ -61,7 +61,7 @@ module.exports = async (
+@@ -15,6 +15,8 @@ const defaultOwner = process.env.OWNER
+ const defaultDaoFactoryAddress = process.env.DAO_FACTORY
+ const defaultENSAddress = process.env.ENS
+ 
++const network = process.env.NETWORK_ID || 1
++
+ module.exports = async (
+   truffleExecCallback,
+   {
+@@ -61,7 +63,7 @@ module.exports = async (
      ens = (await deployENS(null, { artifacts, owner, verbose: false })).ens
      ensAddress = ens.address
    } else {
@@ -301,7 +310,7 @@ index 22d79a6..e14a38d 100644
    }
  
    log('ENS:', ensAddress)
-@@ -80,7 +80,7 @@ module.exports = async (
+@@ -80,7 +82,7 @@ module.exports = async (
  
    let daoFactory
    if (daoFactoryAddress) {
@@ -310,7 +319,7 @@ index 22d79a6..e14a38d 100644
      const hasEVMScripts = await daoFactory.regFactory() !== ZERO_ADDR
  
      log(`Using provided DAOFactory (with${hasEVMScripts ? '' : 'out' } EVMScripts):`, daoFactoryAddress)
-@@ -96,7 +96,7 @@ module.exports = async (
+@@ -96,7 +98,7 @@ module.exports = async (
      apmRepoBase.address,
      ensSubdomainRegistrarBase.address,
      ensAddress,
@@ -319,7 +328,7 @@ index 22d79a6..e14a38d 100644
    )
    await logDeploy(apmFactory, { verbose })
  
-@@ -118,8 +118,9 @@ module.exports = async (
+@@ -118,11 +120,13 @@ module.exports = async (
      }
    }
  
@@ -330,8 +339,13 @@ index 22d79a6..e14a38d 100644
 +  const receipt = await apmFactory.newAPM(tldHash, labelHash, owner, epoch)
  
    log('=========')
-   const apmAddr = receipt.logs.filter(l => l.event == 'DeployAPM')[0].args.apm
-@@ -135,7 +136,7 @@ module.exports = async (
+-  const apmAddr = receipt.logs.filter(l => l.event == 'DeployAPM')[0].args.apm
++  const apmAddrHex = receipt.logs.filter(l => l.event == 'DeployAPM')[0].args.apm
++  const apmAddr = web3.cfxsdk.format.address(apmAddrHex, network)
+   log('# APM:')
+   log('Address:', apmAddr)
+   log('Transaction hash:', receipt.tx)
+@@ -135,7 +139,7 @@ module.exports = async (
      return {
        apmFactory,
        ens,
@@ -340,3 +354,34 @@ index 22d79a6..e14a38d 100644
      }
    }
  }
+diff --git a/node_modules/@aragon/os/scripts/deploy-test-ens.js b/node_modules/@aragon/os/scripts/deploy-test-ens.js
+index 74efc32..111fc6f 100644
+--- a/node_modules/@aragon/os/scripts/deploy-test-ens.js
++++ b/node_modules/@aragon/os/scripts/deploy-test-ens.js
+@@ -5,6 +5,7 @@ const globalArtifacts = this.artifacts // Not injected unless called directly vi
+ const globalWeb3 = this.web3 // Not injected unless called directly via truffle
+ 
+ const defaultOwner = process.env.OWNER
++const network = process.env.NETWORK_ID || 1
+ 
+ module.exports = async (
+   truffleExecCallback,
+@@ -33,7 +34,8 @@ module.exports = async (
+   await logDeploy(factory, { verbose })
+   const receipt = await factory.newENS(owner)
+ 
+-  const ensAddr = receipt.logs.filter(l => l.event == 'DeployENS')[0].args.ens
++  const ensAddrHex = receipt.logs.filter(l => l.event == 'DeployENS')[0].args.ens
++  const ensAddr = web3.cfxsdk.format.address(ensAddrHex, network)
+   log('====================')
+   log('Deployed ENS:', ensAddr)
+ 
+@@ -44,7 +46,7 @@ module.exports = async (
+     truffleExecCallback()
+   } else {
+     return {
+-      ens: ENS.at(ensAddr),
++      ens: await ENS.at(ensAddr),
+       ensFactory: factory,
+     }
+   }
