@@ -132,10 +132,19 @@ index 8d092f2..f8366ed 100644
      }
  
 diff --git a/node_modules/@aragon/templates-shared/lib/TemplatesDeployer.js b/node_modules/@aragon/templates-shared/lib/TemplatesDeployer.js
-index ec9df64..75423cd 100644
+index ec9df64..d060ec0 100644
 --- a/node_modules/@aragon/templates-shared/lib/TemplatesDeployer.js
 +++ b/node_modules/@aragon/templates-shared/lib/TemplatesDeployer.js
-@@ -23,6 +23,7 @@ module.exports = class TemplateDeployer {
+@@ -6,6 +6,8 @@ const deployENS = require('@aragon/os/scripts/deploy-test-ens')
+ const deployAragonID = require('@aragon/id/scripts/deploy-beta-aragonid')
+ const deployDAOFactory = require('@aragon/os/scripts/deploy-daofactory')
+ 
++const network = Number(process.env.NETWORK_ID || 1)
++
+ module.exports = class TemplateDeployer {
+   constructor(web3, artifacts, owner, options = { verbose: false }) {
+     this.web3 = web3
+@@ -23,6 +25,7 @@ module.exports = class TemplateDeployer {
  
    async deployTemplate(contractName) {
      const Template = this.artifacts.require(contractName)
@@ -143,7 +152,7 @@ index ec9df64..75423cd 100644
      const template = await Template.new(this.daoFactory.address, this.ens.address, this.miniMeFactory.address, this.aragonID.address)
      await logDeploy(template)
      return template
-@@ -60,13 +61,13 @@ module.exports = class TemplateDeployer {
+@@ -60,13 +63,13 @@ module.exports = class TemplateDeployer {
      const ENS = this.artifacts.require('ENS')
      if (this.options.ens) {
        this.log(`Using provided ENS: ${this.options.ens}`)
@@ -160,7 +169,7 @@ index ec9df64..75423cd 100644
        this.log('Deployed ENS:', ens.address)
        this.ens = ens
      } else {
-@@ -78,18 +79,18 @@ module.exports = class TemplateDeployer {
+@@ -78,18 +81,18 @@ module.exports = class TemplateDeployer {
      const APM = this.artifacts.require('APMRegistry')
      if (this.options.apm) {
        this.log(`Using provided APM: ${this.options.apm}`)
@@ -182,7 +191,7 @@ index ec9df64..75423cd 100644
        } else {
          this.error('Please provide an APM instance or make sure there is one registered under "aragonpm.eth", aborting.')
        }
-@@ -100,18 +101,18 @@ module.exports = class TemplateDeployer {
+@@ -100,18 +103,18 @@ module.exports = class TemplateDeployer {
      const FIFSResolvingRegistrar = this.artifacts.require('FIFSResolvingRegistrar')
      if (this.options.aragonID) {
        this.log(`Using provided aragonID: ${this.options.aragonID}`)
@@ -204,7 +213,7 @@ index ec9df64..75423cd 100644
        } else {
          this.error('Please provide an aragon ID instance or make sure there is one registered under "aragonid.eth", aborting.')
        }
-@@ -122,7 +123,7 @@ module.exports = class TemplateDeployer {
+@@ -122,7 +125,7 @@ module.exports = class TemplateDeployer {
      const DAOFactory = this.artifacts.require('DAOFactory')
      if (this.options.daoFactory) {
        this.log(`Using provided DAOFactory: ${this.options.daoFactory}`)
@@ -213,7 +222,7 @@ index ec9df64..75423cd 100644
      } else {
        const { daoFactory } = await deployDAOFactory(null, { artifacts: this.artifacts, owner: this.owner, verbose: this.verbose })
        this.log('Deployed DAOFactory:', daoFactory.address)
-@@ -134,7 +135,7 @@ module.exports = class TemplateDeployer {
+@@ -134,7 +137,7 @@ module.exports = class TemplateDeployer {
      const MiniMeTokenFactory = this.artifacts.require('MiniMeTokenFactory')
      if (this.options.miniMeFactory) {
        this.log(`Using provided MiniMeTokenFactory: ${this.options.miniMeFactory}`)
@@ -222,16 +231,32 @@ index ec9df64..75423cd 100644
      } else {
        this.miniMeFactory = await MiniMeTokenFactory.new()
        this.log('Deployed MiniMeTokenFactory:', this.miniMeFactory.address)
-@@ -144,7 +145,7 @@ module.exports = class TemplateDeployer {
+@@ -144,13 +147,21 @@ module.exports = class TemplateDeployer {
    async _fetchRegisteredAPM() {
      const aragonPMHash = namehash('aragonpm.eth')
      const PublicResolver = this.artifacts.require('PublicResolver')
 -    const resolver = PublicResolver.at(await this.ens.resolver(aragonPMHash))
-+    const resolver = await PublicResolver.at(await this.ens.resolver(aragonPMHash))
-     return resolver.addr(aragonPMHash)
+-    return resolver.addr(aragonPMHash)
++
++    const resolverAddrHex = await this.ens.resolver(aragonPMHash)
++    const resolverAddr = this.web3.cfxsdk.format.address(resolverAddrHex, network)
++    const resolver = await PublicResolver.at(resolverAddr)
++
++    const apmAddrHex = await resolver.addr(aragonPMHash)
++    const apmAddr = this.web3.cfxsdk.format.address(apmAddrHex, network)
++    return apmAddr
    }
  
-@@ -160,8 +161,9 @@ module.exports = class TemplateDeployer {
+   async _fetchRegisteredAragonID() {
+     const aragonIDHash = namehash('aragonid.eth')
+-    return this.ens.owner(aragonIDHash)
++    const onwerHex = await this.ens.owner(aragonIDHash)
++    const owner = this.web3.cfxsdk.format.address(onwerHex, network)
++    return owner
+   }
+ 
+   async _registerApp(name, contractName) {
+@@ -160,8 +171,9 @@ module.exports = class TemplateDeployer {
  
    async _registerPackage(name, instance) {
      if (this.options.register) {
