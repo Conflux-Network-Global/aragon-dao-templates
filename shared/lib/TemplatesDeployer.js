@@ -6,6 +6,8 @@ const deployENS = require('@aragon/os/scripts/deploy-test-ens')
 const deployAragonID = require('@aragon/id/scripts/deploy-beta-aragonid')
 const deployDAOFactory = require('@aragon/os/scripts/deploy-daofactory')
 
+const network = Number(process.env.NETWORK_ID || 1)
+
 module.exports = class TemplateDeployer {
   constructor(web3, artifacts, owner, options = { verbose: false }) {
     this.web3 = web3
@@ -23,6 +25,7 @@ module.exports = class TemplateDeployer {
 
   async deployTemplate(contractName) {
     const Template = this.artifacts.require(contractName)
+    const epoch = await this.web3.cfx.getEpochNumber();
     const template = await Template.new(this.daoFactory.address, this.ens.address, this.miniMeFactory.address, this.aragonID.address)
     await logDeploy(template)
     return template
@@ -60,13 +63,13 @@ module.exports = class TemplateDeployer {
     const ENS = this.artifacts.require('ENS')
     if (this.options.ens) {
       this.log(`Using provided ENS: ${this.options.ens}`)
-      this.ens = ENS.at(this.options.ens)
+      this.ens = await ENS.at(this.options.ens)
     } else if (await this.arappENS()) {
       const ensAddress = await this.arappENS()
       this.log(`Using ENS from arapp json file: ${ensAddress}`)
-      this.ens = ENS.at(ensAddress)
+      this.ens = await ENS.at(ensAddress)
     } else if (await this.isLocal()) {
-      const { ens } = await deployENS(null, { web3: this.web3, artifacts: this.artifacts, owner: this.owner, verbose: this.verbose })
+      const ens = await (await deployENS(null, { web3: this.web3, artifacts: this.artifacts, owner: this.owner, verbose: this.verbose })).ens
       this.log('Deployed ENS:', ens.address)
       this.ens = ens
     } else {
@@ -78,18 +81,18 @@ module.exports = class TemplateDeployer {
     const APM = this.artifacts.require('APMRegistry')
     if (this.options.apm) {
       this.log(`Using provided APM: ${this.options.apm}`)
-      this.apm = APM.at(this.options.apm)
+      this.apm = await APM.at(this.options.apm)
     } else {
       if (await this._isAPMRegistered()) {
         const apmAddress = await this._fetchRegisteredAPM()
         this.log(`Using APM registered at aragonpm.eth: ${apmAddress}`)
-        this.apm = APM.at(apmAddress)
+        this.apm = await APM.at(apmAddress)
       } else if (await this.isLocal()) {
         await deployAPM(null, { artifacts: this.artifacts, web3: this.web3, owner: this.owner, ensAddress: this.ens.address, verbose: this.verbose })
         const apmAddress = await this._fetchRegisteredAPM()
         if (!apmAddress) this.error('Local APM deployment failed, aborting.')
         this.log('Deployed APM:', apmAddress)
-        this.apm = APM.at(apmAddress)
+        this.apm = await APM.at(apmAddress)
       } else {
         this.error('Please provide an APM instance or make sure there is one registered under "aragonpm.eth", aborting.')
       }
@@ -100,18 +103,18 @@ module.exports = class TemplateDeployer {
     const FIFSResolvingRegistrar = this.artifacts.require('FIFSResolvingRegistrar')
     if (this.options.aragonID) {
       this.log(`Using provided aragonID: ${this.options.aragonID}`)
-      this.aragonID = FIFSResolvingRegistrar.at(this.options.aragonID)
+      this.aragonID = await FIFSResolvingRegistrar.at(this.options.aragonID)
     } else {
       if (await this._isAragonIdRegistered()) {
         const aragonIDAddress = await this._fetchRegisteredAragonID()
         this.log(`Using aragonID registered at aragonid.eth: ${aragonIDAddress}`)
-        this.aragonID = FIFSResolvingRegistrar.at(aragonIDAddress)
+        this.aragonID = await FIFSResolvingRegistrar.at(aragonIDAddress)
       } else if (await this.isLocal()) {
         await deployAragonID(null, { artifacts: this.artifacts, web3: this.web3, owner: this.owner, ensAddress: this.ens.address, verbose: this.verbose })
         const aragonIDAddress = await this._fetchRegisteredAragonID()
         if (!aragonIDAddress) this.error('Local aragon ID deployment failed, aborting.')
         this.log('Deployed aragonID:', aragonIDAddress)
-        this.aragonID = FIFSResolvingRegistrar.at(aragonIDAddress)
+        this.aragonID = await FIFSResolvingRegistrar.at(aragonIDAddress)
       } else {
         this.error('Please provide an aragon ID instance or make sure there is one registered under "aragonid.eth", aborting.')
       }
@@ -122,7 +125,7 @@ module.exports = class TemplateDeployer {
     const DAOFactory = this.artifacts.require('DAOFactory')
     if (this.options.daoFactory) {
       this.log(`Using provided DAOFactory: ${this.options.daoFactory}`)
-      this.daoFactory = DAOFactory.at(this.options.daoFactory)
+      this.daoFactory = await DAOFactory.at(this.options.daoFactory)
     } else {
       const { daoFactory } = await deployDAOFactory(null, { artifacts: this.artifacts, owner: this.owner, verbose: this.verbose })
       this.log('Deployed DAOFactory:', daoFactory.address)
@@ -134,7 +137,7 @@ module.exports = class TemplateDeployer {
     const MiniMeTokenFactory = this.artifacts.require('MiniMeTokenFactory')
     if (this.options.miniMeFactory) {
       this.log(`Using provided MiniMeTokenFactory: ${this.options.miniMeFactory}`)
-      this.miniMeFactory = MiniMeTokenFactory.at(this.options.miniMeFactory)
+      this.miniMeFactory = await MiniMeTokenFactory.at(this.options.miniMeFactory)
     } else {
       this.miniMeFactory = await MiniMeTokenFactory.new()
       this.log('Deployed MiniMeTokenFactory:', this.miniMeFactory.address)
@@ -144,13 +147,21 @@ module.exports = class TemplateDeployer {
   async _fetchRegisteredAPM() {
     const aragonPMHash = namehash('aragonpm.eth')
     const PublicResolver = this.artifacts.require('PublicResolver')
-    const resolver = PublicResolver.at(await this.ens.resolver(aragonPMHash))
-    return resolver.addr(aragonPMHash)
+
+    const resolverAddrHex = await this.ens.resolver(aragonPMHash)
+    const resolverAddr = this.web3.cfxsdk.format.address(resolverAddrHex, network)
+    const resolver = await PublicResolver.at(resolverAddr)
+
+    const apmAddrHex = await resolver.addr(aragonPMHash)
+    const apmAddr = this.web3.cfxsdk.format.address(apmAddrHex, network)
+    return apmAddr
   }
 
   async _fetchRegisteredAragonID() {
     const aragonIDHash = namehash('aragonid.eth')
-    return this.ens.owner(aragonIDHash)
+    const onwerHex = await this.ens.owner(aragonIDHash)
+    const owner = this.web3.cfxsdk.format.address(onwerHex, network)
+    return owner
   }
 
   async _registerApp(name, contractName) {
@@ -160,8 +171,9 @@ module.exports = class TemplateDeployer {
 
   async _registerPackage(name, instance) {
     if (this.options.register) {
-      this.log(`Registering package for ${instance.constructor.contractName} as "${name}.aragonpm.eth"`)
-      return this.apm.newRepoWithVersion(name, this.owner, [1, 0, 0], instance.address, '')
+      const epoch = await this.web3.cfx.getEpochNumber() - 100;
+      this.log(`Registering package for ${instance.constructor.contractName} as "${name}.aragonpm.eth" (${instance.address}) with epoch ${epoch}`)
+      return this.apm.newRepoWithVersion(name, this.owner, [1, 0, 0], instance.address, '0x', epoch)
     }
   }
 
