@@ -8,7 +8,15 @@ const deployDAOFactory = require('@conflux-/aragon-os/scripts/deploy-daofactory'
 
 const network = Number(process.env.NETWORK_ID || 1)
 
-module.exports = class TemplateDeployer {
+const deployer = (artifacts) => async (daoFactoryAddress, ensAddress, miniMeFactoryAddress, aragonIDAddress) => {
+    const Template = artifacts.require(contractName)
+    const template = await Template.new(daoFactoryAddress, ensAddress, miniMeFactoryAddress, aragonIDAddress)
+    await logDeploy(template)
+		await this._writeArappFile(templateName, template)
+    return template
+}
+
+class _TemplateDeployer {
   constructor(web3, artifacts, owner, options = { verbose: false }) {
     this.web3 = web3
     this.artifacts = artifacts
