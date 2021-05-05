@@ -47,10 +47,10 @@
     "@aragon/apps-token-manager": "^2.1.0",
     "@aragon/apps-vault": "^4.1.0",
     "@aragon/apps-voting": "^2.1.0",
-    "@aragon/id": "2.0.3",
-    "@aragon/os": "4.3.0",
     "@aragon/templates-shared": "^1.0.0-rc.1",
     "@aragon/truffle-config-v4": "^1.0.1",
+    "@conflux-/aragon-id": "2.0.4",
+    "@conflux-/aragon-os": "4.4.1",
     "dotenv": "^8.2.0",
     "patch-package": "^6.4.6"
   },
