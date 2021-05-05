@@ -107,7 +107,7 @@ module.exports = class TemplateDeployer {
     } else {
       if (await this._isAragonIdRegistered()) {
         const aragonIDAddress = await this._fetchRegisteredAragonID()
-        this.log(`Using aragonID registered at aragonid.eth: ${aragonIDAddress}`)
+        this.log(`Using aragonID registered at aragonid.cfx: ${aragonIDAddress}`)
         this.aragonID = await FIFSResolvingRegistrar.at(aragonIDAddress)
       } else if (await this.isLocal()) {
         await deployAragonID(null, { artifacts: this.artifacts, web3: this.web3, owner: this.owner, ensAddress: this.ens.address, verbose: this.verbose })
@@ -116,7 +116,7 @@ module.exports = class TemplateDeployer {
         this.log('Deployed aragonID:', aragonIDAddress)
         this.aragonID = await FIFSResolvingRegistrar.at(aragonIDAddress)
       } else {
-        this.error('Please provide an aragon ID instance or make sure there is one registered under "aragonid.eth", aborting.')
+        this.error('Please provide an aragon ID instance or make sure there is one registered under "aragonid.cfx", aborting.')
       }
     }
   }
@@ -158,7 +158,7 @@ module.exports = class TemplateDeployer {
   }
 
   async _fetchRegisteredAragonID() {
-    const aragonIDHash = namehash('aragonid.eth')
+    const aragonIDHash = namehash('aragonid.cfx')
     const onwerHex = await this.ens.owner(aragonIDHash)
     const owner = this.web3.cfxsdk.format.address(onwerHex, network)
     return owner
@@ -182,7 +182,7 @@ module.exports = class TemplateDeployer {
   }
 
   async _isAragonIdRegistered() {
-    return this._isRepoRegistered(namehash('aragonid.eth'))
+    return this._isRepoRegistered(namehash('aragonid.cfx'))
   }
 
   async _isPackageRegistered(name) {
@@ -190,7 +190,7 @@ module.exports = class TemplateDeployer {
   }
 
   async _isRepoRegistered(hash) {
-    const owner = await this.ens.owner(hash)
+    const owner =  this.web3.cfxsdk.format.hexAddress(await this.ens.owner(hash))
     return owner !== '0x0000000000000000000000000000000000000000' && owner !== '0x'
   }
 

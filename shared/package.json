@@ -25,8 +25,8 @@
     "@aragon/apps-token-manager": "^2.1.0",
     "@aragon/apps-vault": "^4.1.0",
     "@aragon/apps-voting": "^2.1.0",
-    "@aragon/id": "2.0.3",
-    "@aragon/os": "4.3.0",
+    "@conflux-/aragon-id": "2.0.4",
+    "@conflux-/aragon-os": "4.4.1",
     "eth-ens-namehash": "^2.0.8",
     "yargs": "^13.2.4"
   },
