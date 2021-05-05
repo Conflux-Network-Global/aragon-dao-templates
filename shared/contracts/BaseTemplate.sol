@@ -1,24 +1,24 @@
 pragma solidity 0.4.24;
 
-import "@aragon/apps-agent/contracts/Agent.sol";
-import "@aragon/apps-vault/contracts/Vault.sol";
-import "@aragon/apps-voting/contracts/Voting.sol";
-import "@aragon/apps-payroll/contracts/Payroll.sol";
-import "@aragon/apps-finance/contracts/Finance.sol";
-import "@aragon/apps-token-manager/contracts/TokenManager.sol";
-import "@aragon/apps-survey/contracts/Survey.sol";
+import "@conflux-/aragon-apps-agent/contracts/Agent.sol";
+import "@conflux-/aragon-apps-vault/contracts/Vault.sol";
+import "@conflux-/aragon-apps-voting/contracts/Voting.sol";
+import "@conflux-/aragon-apps-payroll/contracts/Payroll.sol";
+import "@conflux-/aragon-apps-finance/contracts/Finance.sol";
+import "@conflux-/aragon-apps-token-manager/contracts/TokenManager.sol";
+import "@conflux-/aragon-apps-survey/contracts/Survey.sol";
 import "@aragon/apps-shared-minime/contracts/MiniMeToken.sol";
 
-import "@aragon/os/contracts/acl/ACL.sol";
-import "@aragon/os/contracts/apm/Repo.sol";
-import "@aragon/os/contracts/apm/APMNamehash.sol";
-import "@aragon/os/contracts/kernel/Kernel.sol";
-import "@aragon/os/contracts/lib/ens/ENS.sol";
-import "@aragon/os/contracts/lib/ens/PublicResolver.sol";
-import "@aragon/os/contracts/factory/DAOFactory.sol";
-import "@aragon/os/contracts/common/IsContract.sol";
-import "@aragon/os/contracts/common/Uint256Helpers.sol";
-import "@aragon/id/contracts/IFIFSResolvingRegistrar.sol";
+import "@conflux-/aragon-os/contracts/acl/ACL.sol";
+import "@conflux-/aragon-os/contracts/apm/Repo.sol";
+import "@conflux-/aragon-os/contracts/apm/APMNamehash.sol";
+import "@conflux-/aragon-os/contracts/kernel/Kernel.sol";
+import "@conflux-/aragon-os/contracts/lib/ens/ENS.sol";
+import "@conflux-/aragon-os/contracts/lib/ens/PublicResolver.sol";
+import "@conflux-/aragon-os/contracts/factory/DAOFactory.sol";
+import "@conflux-/aragon-os/contracts/common/IsContract.sol";
+import "@conflux-/aragon-os/contracts/common/Uint256Helpers.sol";
+import "@conflux-/aragon-id/contracts/IFIFSResolvingRegistrar.sol";
 
 
 contract BaseTemplate is APMNamehash, IsContract {

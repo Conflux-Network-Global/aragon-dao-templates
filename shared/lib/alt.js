@@ -8,7 +8,15 @@ const deployDAOFactory = require('@conflux-/aragon-os/scripts/deploy-daofactory'
 
 const network = Number(process.env.NETWORK_ID || 1)
 
-module.exports = class TemplateDeployer {
+const deployer = (artifacts) => async (daoFactoryAddress, ensAddress, miniMeFactoryAddress, aragonIDAddress) => {
+    const Template = artifacts.require(contractName)
+    const template = await Template.new(daoFactoryAddress, ensAddress, miniMeFactoryAddress, aragonIDAddress)
+    await logDeploy(template)
+		await this._writeArappFile(templateName, template)
+    return template
+}
+
+class _TemplateDeployer {
   constructor(web3, artifacts, owner, options = { verbose: false }) {
     this.web3 = web3
     this.artifacts = artifacts
@@ -107,7 +115,7 @@ module.exports = class TemplateDeployer {
     } else {
       if (await this._isAragonIdRegistered()) {
         const aragonIDAddress = await this._fetchRegisteredAragonID()
-        this.log(`Using aragonID registered at aragonid.cfx: ${aragonIDAddress}`)
+        this.log(`Using aragonID registered at aragonid.eth: ${aragonIDAddress}`)
         this.aragonID = await FIFSResolvingRegistrar.at(aragonIDAddress)
       } else if (await this.isLocal()) {
         await deployAragonID(null, { artifacts: this.artifacts, web3: this.web3, owner: this.owner, ensAddress: this.ens.address, verbose: this.verbose })
@@ -116,7 +124,7 @@ module.exports = class TemplateDeployer {
         this.log('Deployed aragonID:', aragonIDAddress)
         this.aragonID = await FIFSResolvingRegistrar.at(aragonIDAddress)
       } else {
-        this.error('Please provide an aragon ID instance or make sure there is one registered under "aragonid.cfx", aborting.')
+        this.error('Please provide an aragon ID instance or make sure there is one registered under "aragonid.eth", aborting.')
       }
     }
   }
@@ -158,7 +166,7 @@ module.exports = class TemplateDeployer {
   }
 
   async _fetchRegisteredAragonID() {
-    const aragonIDHash = namehash('aragonid.cfx')
+    const aragonIDHash = namehash('aragonid.eth')
     const onwerHex = await this.ens.owner(aragonIDHash)
     const owner = this.web3.cfxsdk.format.address(onwerHex, network)
     return owner
@@ -182,7 +190,7 @@ module.exports = class TemplateDeployer {
   }
 
   async _isAragonIdRegistered() {
-    return this._isRepoRegistered(namehash('aragonid.cfx'))
+    return this._isRepoRegistered(namehash('aragonid.eth'))
   }
 
   async _isPackageRegistered(name) {
@@ -190,7 +198,7 @@ module.exports = class TemplateDeployer {
   }
 
   async _isRepoRegistered(hash) {
-    const owner =  this.web3.cfxsdk.format.hexAddress(await this.ens.owner(hash))
+    const owner = await this.ens.owner(hash)
     return owner !== '0x0000000000000000000000000000000000000000' && owner !== '0x'
   }
 
