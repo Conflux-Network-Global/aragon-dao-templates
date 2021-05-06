@@ -10,7 +10,7 @@ module.exports = (web3, artifacts) => {
 
   const getAPM = async () => {
     const ens = await getENS()
-    const apmAddress = await ens.resolver(namehash('aragonpm.eth'))
+    const apmAddress = await ens.resolver(namehash('aragonpm.cfx'))
     return artifacts.require('PublicResolver').at(apmAddress)
   }
 

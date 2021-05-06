@@ -11,7 +11,7 @@ const APPS = [
 ]
 
 const APP_IDS = APPS.reduce((ids, { name }) => {
-  ids[name] = namehash(`${name}.aragonpm.eth`)
+  ids[name] = namehash(`${name}.aragonpm.cfx`)
   return ids
 }, {})
 

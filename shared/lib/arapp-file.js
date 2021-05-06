@@ -35,7 +35,7 @@ module.exports = web3 => {
     data.path = `contracts/${contractName}.sol`
     if (data.environments === undefined) data.environments = {}
     const wsRPC = `wss://${network}.eth.aragon.network/ws`
-    data.environments[network] = { appName: `${appName}.aragonpm.eth`, network, registry, wsRPC }
+    data.environments[network] = { appName: `${appName}.aragonpm.cfx`, network, registry, wsRPC }
     fs.writeFileSync(await arappFilePath(), JSON.stringify(data, null, 2))
   }
 
