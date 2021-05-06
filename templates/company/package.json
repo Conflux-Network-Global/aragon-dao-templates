@@ -50,7 +50,7 @@
     "@aragon/truffle-config-v4": "^1.0.1",
     "@conflux-/aragon-id": "2.0.6",
     "@conflux-/aragon-os": "4.4.4",
-    "@conflux-/aragon-templates-shared": "1.0.10",
+    "@conflux-/aragon-templates-shared": "1.0.11",
     "dotenv": "^8.2.0",
     "patch-package": "^6.4.6"
   },
