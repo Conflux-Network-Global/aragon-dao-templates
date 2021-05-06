@@ -173,7 +173,7 @@ module.exports = class TemplateDeployer {
     if (this.options.register) {
       const epoch = await this.web3.cfx.getEpochNumber() - 100;
       this.log(`Registering package for ${instance.constructor.contractName} as "${name}.aragonpm.cfx" (${instance.address}) with epoch ${epoch}`)
-      return this.apm.newRepoWithVersion(name, this.owner, [1, 0, 0], instance.address, '0x', epoch)
+      return this.apm.newRepoWithVersion(name, this.owner, [1, 0, 0], instance.address, '0x', epoch, { from: this.owner })
     }
   }
 
