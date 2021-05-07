@@ -1,10 +1,9 @@
 {
   "environments": {
-    "rinkeby": {
+    "cfx-testnet": {
       "appName": "company-template.aragonpm.cfx",
-      "network": "rinkeby",
-      "registry": "0x98Df287B6C145399Aaa709692c8D308357bC085D",
-      "wsRPC": "wss://rinkeby.eth.aragon.network/ws"
+      "network": "cfx-testnet",
+      "registry": "cfxtest:ach1mzf802151fbar7xuj9f2fm7ffdak4jhaj723up"
     }
   },
   "roles": [],
@@ -122,6 +121,10 @@
         {
           "name": "_useAgentAsVault",
           "type": "bool"
+        },
+        {
+          "name": "epoch",
+          "type": "uint256"
         }
       ],
       "name": "newTokenAndInstance",
@@ -179,6 +182,14 @@
         {
           "name": "_useAgentAsVault",
           "type": "bool"
+        },
+        {
+          "name": "_payrollSettings",
+          "type": "uint256[4]"
+        },
+        {
+          "name": "_epoch",
+          "type": "uint256"
         }
       ],
       "name": "newInstance",
@@ -215,8 +226,8 @@
           "type": "bool"
         },
         {
-          "name": "_payrollSettings",
-          "type": "uint256[4]"
+          "name": "epoch",
+          "type": "uint256"
         }
       ],
       "name": "newInstance",
@@ -228,7 +239,7 @@
   ],
   "functions": [
     {
-      "sig": "newTokenAndInstance(string,string,string,address[],uint256[],uint64[3],uint64,bool)",
+      "sig": "newTokenAndInstance(string,string,string,address[],uint256[],uint64[3],uint64,bool,uint256)",
       "roles": [],
       "notice": null
     },
@@ -238,12 +249,12 @@
       "notice": null
     },
     {
-      "sig": "newInstance(string,address[],uint256[],uint64[3],uint64,bool)",
+      "sig": "newInstance(string,address[],uint256[],uint64[3],uint64,bool,uint256)",
       "roles": [],
       "notice": null
     },
     {
-      "sig": "newInstance(string,address[],uint256[],uint64[3],uint64,bool,uint256[4])",
+      "sig": "newInstance(string,address[],uint256[],uint64[3],uint64,bool,uint256[4],uint256)",
       "roles": [],
       "notice": null
     }
