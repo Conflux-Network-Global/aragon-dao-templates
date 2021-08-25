@@ -12,13 +12,13 @@ contract BareTemplate is BaseTemplate {
         // solium-disable-previous-line no-empty-blocks
     }
 
-    function newInstance() public {
-        newInstance(bytes32(0), new bytes32[](0), address(0), new bytes(0));
+    function newInstance(uint256 epoch) public {
+        newInstance(bytes32(0), new bytes32[](0), address(0), new bytes(0), epoch);
     }
 
-    function newInstance(bytes32 _appId, bytes32[] memory _roles, address _authorizedAddress, bytes memory _initializeCallData) public {
+    function newInstance(bytes32 _appId, bytes32[] memory _roles, address _authorizedAddress, bytes memory _initializeCallData, uint256 epoch) public {
         address root = msg.sender;
-        (Kernel dao, ACL acl) = _createDAO();
+        (Kernel dao, ACL acl) = _createDAO(epoch);
 
         // If there is no appId, an empty DAO will be created
         if (_appId != bytes32(0)) {

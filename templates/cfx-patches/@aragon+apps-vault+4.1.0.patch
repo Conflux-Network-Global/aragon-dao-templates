@@ -1,0 +1,15 @@
+diff --git a/node_modules/@aragon/apps-vault/contracts/Vault.sol b/node_modules/@aragon/apps-vault/contracts/Vault.sol
+index dfc755d..d3594a9 100644
+--- a/node_modules/@aragon/apps-vault/contracts/Vault.sol
++++ b/node_modules/@aragon/apps-vault/contracts/Vault.sol
+@@ -37,8 +37,8 @@ contract Vault is EtherTokenConstant, AragonApp, DepositableStorage {
+     * @notice Initialize Vault app
+     * @dev As an AragonApp it needs to be initialized in order for roles (`auth` and `authP`) to work
+     */
+-    function initialize() external onlyInit {
+-        initialized();
++    function initialize(uint256 epoch) external onlyInit {
++        initialized(epoch);
+         setDepositable(true);
+     }
+ 

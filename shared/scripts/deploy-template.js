@@ -1,5 +1,5 @@
 const { APPS } = require('../helpers/apps')
-const getAccounts = require('@aragon/os/scripts/helpers/get-accounts')
+const getAccounts = require('@conflux-/aragon-os/scripts/helpers/get-accounts')
 const TemplatesDeployer = require('../lib/TemplatesDeployer')
 
 const errorOut = message => {

@@ -1,0 +1,387 @@
+diff --git a/node_modules/@aragon/os/contracts/acl/ACL.sol b/node_modules/@aragon/os/contracts/acl/ACL.sol
+index 032f556..1062fc9 100644
+--- a/node_modules/@aragon/os/contracts/acl/ACL.sol
++++ b/node_modules/@aragon/os/contracts/acl/ACL.sol
+@@ -75,8 +75,8 @@ contract ACL is IACL, TimeHelpers, AragonApp, ACLHelpers {
+     * @notice Initialize an ACL instance and set `_permissionsCreator` as the entity that can create other permissions
+     * @param _permissionsCreator Entity that will be given permission over createPermission
+     */
+-    function initialize(address _permissionsCreator) public onlyInit {
+-        initialized();
++    function initialize(address _permissionsCreator, uint256 epoch) public onlyInit {
++        initialized(epoch);
+         require(msg.sender == address(kernel()), ERROR_AUTH_INIT_KERNEL);
+ 
+         _createPermission(_permissionsCreator, this, CREATE_PERMISSIONS_ROLE, _permissionsCreator);
+diff --git a/node_modules/@aragon/os/contracts/acl/IACL.sol b/node_modules/@aragon/os/contracts/acl/IACL.sol
+index cf28251..30051b7 100644
+--- a/node_modules/@aragon/os/contracts/acl/IACL.sol
++++ b/node_modules/@aragon/os/contracts/acl/IACL.sol
+@@ -6,7 +6,7 @@ pragma solidity ^0.4.24;
+ 
+ 
+ interface IACL {
+-    function initialize(address permissionsCreator) external;
++    function initialize(address permissionsCreator, uint256 epoch) external;
+ 
+     // TODO: this should be external
+     // See https://github.com/ethereum/solidity/issues/4832
+diff --git a/node_modules/@aragon/os/contracts/apm/APMRegistry.sol b/node_modules/@aragon/os/contracts/apm/APMRegistry.sol
+index 1a0ae42..712e2a1 100644
+--- a/node_modules/@aragon/os/contracts/apm/APMRegistry.sol
++++ b/node_modules/@aragon/os/contracts/apm/APMRegistry.sol
+@@ -35,8 +35,8 @@ contract APMRegistry is AragonApp, AppProxyFactory, APMInternalAppNames {
+     * @notice Initialize this APMRegistry instance and set `_registrar` as the ENS subdomain registrar
+     * @param _registrar ENSSubdomainRegistrar instance that holds registry root node ownership
+     */
+-    function initialize(ENSSubdomainRegistrar _registrar) public onlyInit {
+-        initialized();
++    function initialize(ENSSubdomainRegistrar _registrar, uint256 epoch) public onlyInit {
++        initialized(epoch);
+ 
+         registrar = _registrar;
+         ens = registrar.ens();
+@@ -54,8 +54,8 @@ contract APMRegistry is AragonApp, AppProxyFactory, APMInternalAppNames {
+     * @param _name Repo name, must be ununsed
+     * @param _dev Address that will be given permission to create versions
+     */
+-    function newRepo(string _name, address _dev) public auth(CREATE_REPO_ROLE) returns (Repo) {
+-        return _newRepo(_name, _dev);
++    function newRepo(string _name, address _dev, uint256 epoch) public auth(CREATE_REPO_ROLE) returns (Repo) {
++        return _newRepo(_name, _dev, epoch);
+     }
+ 
+     /**
+@@ -71,10 +71,11 @@ contract APMRegistry is AragonApp, AppProxyFactory, APMInternalAppNames {
+         address _dev,
+         uint16[3] _initialSemanticVersion,
+         address _contractAddress,
+-        bytes _contentURI
++        bytes _contentURI,
++        uint256 epoch
+     ) public auth(CREATE_REPO_ROLE) returns (Repo)
+     {
+-        Repo repo = _newRepo(_name, this); // need to have permissions to create version
++        Repo repo = _newRepo(_name, this, epoch); // need to have permissions to create version
+         repo.newVersion(_initialSemanticVersion, _contractAddress, _contentURI);
+ 
+         // Give permissions to _dev
+@@ -85,10 +86,10 @@ contract APMRegistry is AragonApp, AppProxyFactory, APMInternalAppNames {
+         return repo;
+     }
+ 
+-    function _newRepo(string _name, address _dev) internal returns (Repo) {
++    function _newRepo(string _name, address _dev, uint256 epoch) internal returns (Repo) {
+         require(bytes(_name).length > 0, ERROR_EMPTY_NAME);
+ 
+-        Repo repo = newClonedRepo();
++        Repo repo = newClonedRepo(epoch);
+ 
+         ACL(kernel().acl()).createPermission(_dev, repo, repo.CREATE_VERSION_ROLE(), _dev);
+ 
+@@ -101,9 +102,9 @@ contract APMRegistry is AragonApp, AppProxyFactory, APMInternalAppNames {
+         return repo;
+     }
+ 
+-    function newClonedRepo() internal returns (Repo repo) {
++    function newClonedRepo(uint256 epoch) internal returns (Repo repo) {
+         repo = Repo(newAppProxy(kernel(), repoAppId()));
+-        repo.initialize();
++        repo.initialize(epoch);
+     }
+ 
+     function repoAppId() internal view returns (bytes32) {
+diff --git a/node_modules/@aragon/os/contracts/apm/Repo.sol b/node_modules/@aragon/os/contracts/apm/Repo.sol
+index 0cb73c2..da3f481 100644
+--- a/node_modules/@aragon/os/contracts/apm/Repo.sol
++++ b/node_modules/@aragon/os/contracts/apm/Repo.sol
+@@ -32,8 +32,8 @@ contract Repo is AragonApp {
+     * @dev Initialize can only be called once. It saves the block number in which it was initialized.
+     * @notice Initialize this Repo
+     */
+-    function initialize() public onlyInit {
+-        initialized();
++    function initialize(uint256 epoch) public onlyInit {
++        initialized(epoch);
+         versionsNextIndex = 1;
+     }
+ 
+diff --git a/node_modules/@aragon/os/contracts/common/Initializable.sol b/node_modules/@aragon/os/contracts/common/Initializable.sol
+index d267ab2..ea1dd11 100644
+--- a/node_modules/@aragon/os/contracts/common/Initializable.sol
++++ b/node_modules/@aragon/os/contracts/common/Initializable.sol
+@@ -14,6 +14,9 @@ contract Initializable is TimeHelpers {
+     // keccak256("aragonOS.initializable.initializationBlock")
+     bytes32 internal constant INITIALIZATION_BLOCK_POSITION = 0xebb05b386a8d34882b8711d156f463690983dc47815980fb82aeeff1aa43579e;
+ 
++    // keccak256("aragonOS.initializable.initializationEpoch")
++    bytes32 internal constant INITIALIZATION_EPOCH_POSITION = 0xe7fa44a35a50de89802e274b5f39cb40d0e298b7ffd493afac2f8960c0601af0;
++
+     string private constant ERROR_ALREADY_INITIALIZED = "INIT_ALREADY_INITIALIZED";
+     string private constant ERROR_NOT_INITIALIZED = "INIT_NOT_INITIALIZED";
+ 
+@@ -34,6 +37,13 @@ contract Initializable is TimeHelpers {
+         return INITIALIZATION_BLOCK_POSITION.getStorageUint256();
+     }
+ 
++    /**
++    * @return Epoch number in which the contract was initialized
++    */
++    function getInitializationEpoch() public view returns (uint256) {
++        return INITIALIZATION_EPOCH_POSITION.getStorageUint256();
++    }
++
+     /**
+     * @return Whether the contract has been initialized by the time of the current block
+     */
+@@ -45,8 +55,9 @@ contract Initializable is TimeHelpers {
+     /**
+     * @dev Function to be called by top level contract after initialization has finished.
+     */
+-    function initialized() internal onlyInit {
++    function initialized(uint256 epoch) internal onlyInit {
+         INITIALIZATION_BLOCK_POSITION.setStorageUint256(getBlockNumber());
++        INITIALIZATION_EPOCH_POSITION.setStorageUint256(epoch);
+     }
+ 
+     /**
+diff --git a/node_modules/@aragon/os/contracts/ens/ENSSubdomainRegistrar.sol b/node_modules/@aragon/os/contracts/ens/ENSSubdomainRegistrar.sol
+index 9fa8811..8dd848e 100644
+--- a/node_modules/@aragon/os/contracts/ens/ENSSubdomainRegistrar.sol
++++ b/node_modules/@aragon/os/contracts/ens/ENSSubdomainRegistrar.sol
+@@ -35,8 +35,8 @@ contract ENSSubdomainRegistrar is AragonApp, ENSConstants {
+     * @param _ens Address of ENS registry
+     * @param _rootNode Node to allocate subdomains under
+     */
+-    function initialize(AbstractENS _ens, bytes32 _rootNode) public onlyInit {
+-        initialized();
++    function initialize(AbstractENS _ens, bytes32 _rootNode, uint256 epoch) public onlyInit {
++        initialized(epoch);
+ 
+         // We need ownership to create subnodes
+         require(_ens.owner(_rootNode) == address(this), ERROR_NO_NODE_OWNERSHIP);
+diff --git a/node_modules/@aragon/os/contracts/evmscript/EVMScriptRegistry.sol b/node_modules/@aragon/os/contracts/evmscript/EVMScriptRegistry.sol
+index 7eb8dd3..d208a51 100644
+--- a/node_modules/@aragon/os/contracts/evmscript/EVMScriptRegistry.sol
++++ b/node_modules/@aragon/os/contracts/evmscript/EVMScriptRegistry.sol
+@@ -45,8 +45,8 @@ contract EVMScriptRegistry is IEVMScriptRegistry, EVMScriptRegistryConstants, Ar
+     /**
+     * @notice Initialize the registry
+     */
+-    function initialize() public onlyInit {
+-        initialized();
++    function initialize(uint256 epoch) public onlyInit {
++        initialized(epoch);
+         // Create empty record to begin executor IDs at 1
+         executorsNextIndex = 1;
+     }
+diff --git a/node_modules/@aragon/os/contracts/factory/APMRegistryFactory.sol b/node_modules/@aragon/os/contracts/factory/APMRegistryFactory.sol
+index 7f0aa3f..2a2f7e4 100644
+--- a/node_modules/@aragon/os/contracts/factory/APMRegistryFactory.sol
++++ b/node_modules/@aragon/os/contracts/factory/APMRegistryFactory.sol
+@@ -56,7 +56,7 @@ contract APMRegistryFactory is APMInternalAppNames {
+     * @param _root Manager for the new aragonPM DAO
+     * @return The new aragonPM's APMRegistry app
+     */
+-    function newAPM(bytes32 _tld, bytes32 _label, address _root) public returns (APMRegistry) {
++    function newAPM(bytes32 _tld, bytes32 _label, address _root, uint256 epoch) public returns (APMRegistry) {
+         bytes32 node = keccak256(abi.encodePacked(_tld, _label));
+ 
+         // Assume it is the test ENS
+@@ -66,18 +66,18 @@ contract APMRegistryFactory is APMInternalAppNames {
+             ens.setSubnodeOwner(_tld, _label, this);
+         }
+ 
+-        Kernel dao = daoFactory.newDAO(this);
++        Kernel dao = daoFactory.newDAO(this, epoch);
+         ACL acl = ACL(dao.acl());
+ 
+         acl.createPermission(this, dao, dao.APP_MANAGER_ROLE(), this);
+ 
+         // Deploy app proxies
+-        bytes memory noInit = new bytes(0);
++        // bytes memory noInit = new bytes(0);
+         ENSSubdomainRegistrar ensSub = ENSSubdomainRegistrar(
+             dao.newAppInstance(
+                 keccak256(abi.encodePacked(node, keccak256(abi.encodePacked(ENS_SUB_APP_NAME)))),
+                 ensSubdomainRegistrarBase,
+-                noInit,
++                new bytes(0),
+                 false
+             )
+         );
+@@ -85,7 +85,7 @@ contract APMRegistryFactory is APMInternalAppNames {
+             dao.newAppInstance(
+                 keccak256(abi.encodePacked(node, keccak256(abi.encodePacked(APM_APP_NAME)))),
+                 registryBase,
+-                noInit,
++                new bytes(0),
+                 false
+             )
+         );
+@@ -107,17 +107,17 @@ contract APMRegistryFactory is APMInternalAppNames {
+ 
+         // Initialize
+         ens.setOwner(node, ensSub);
+-        ensSub.initialize(ens, node);
+-        apm.initialize(ensSub);
++        ensSub.initialize(ens, node, epoch);
++        apm.initialize(ensSub, epoch);
+ 
+-        uint16[3] memory firstVersion;
+-        firstVersion[0] = 1;
++        // uint16[3] memory firstVersion;
++        // firstVersion[0] = 1;
+ 
+         acl.createPermission(this, apm, apm.CREATE_REPO_ROLE(), this);
+ 
+-        apm.newRepoWithVersion(APM_APP_NAME, _root, firstVersion, registryBase, b("ipfs:apm"));
+-        apm.newRepoWithVersion(ENS_SUB_APP_NAME, _root, firstVersion, ensSubdomainRegistrarBase, b("ipfs:enssub"));
+-        apm.newRepoWithVersion(REPO_APP_NAME, _root, firstVersion, repoBase, b("ipfs:repo"));
++        apm.newRepoWithVersion(APM_APP_NAME, _root, [uint16(1), 0, 0], registryBase, b("ipfs:apm"), epoch);
++        apm.newRepoWithVersion(ENS_SUB_APP_NAME, _root, [uint16(1), 0, 0], ensSubdomainRegistrarBase, b("ipfs:enssub"), epoch);
++        apm.newRepoWithVersion(REPO_APP_NAME, _root, [uint16(1), 0, 0], repoBase, b("ipfs:repo"), epoch);
+ 
+         configureAPMPermissions(acl, apm, _root);
+ 
+diff --git a/node_modules/@aragon/os/contracts/factory/DAOFactory.sol b/node_modules/@aragon/os/contracts/factory/DAOFactory.sol
+index a2eec70..892107d 100644
+--- a/node_modules/@aragon/os/contracts/factory/DAOFactory.sol
++++ b/node_modules/@aragon/os/contracts/factory/DAOFactory.sol
+@@ -39,13 +39,13 @@ contract DAOFactory {
+     * @param _root Address that will be granted control to setup DAO permissions
+     * @return Newly created DAO
+     */
+-    function newDAO(address _root) public returns (Kernel) {
++    function newDAO(address _root, uint256 epoch) public returns (Kernel) {
+         Kernel dao = Kernel(new KernelProxy(baseKernel));
+ 
+         if (address(regFactory) == address(0)) {
+-            dao.initialize(baseACL, _root);
++            dao.initialize(baseACL, _root, epoch);
+         } else {
+-            dao.initialize(baseACL, this);
++            dao.initialize(baseACL, this, epoch);
+ 
+             ACL acl = ACL(dao.acl());
+             bytes32 permRole = acl.CREATE_PERMISSIONS_ROLE();
+diff --git a/node_modules/@aragon/os/contracts/kernel/Kernel.sol b/node_modules/@aragon/os/contracts/kernel/Kernel.sol
+index 1fc9190..782e889 100644
+--- a/node_modules/@aragon/os/contracts/kernel/Kernel.sol
++++ b/node_modules/@aragon/os/contracts/kernel/Kernel.sol
+@@ -40,15 +40,15 @@ contract Kernel is IKernel, KernelStorage, KernelAppIds, KernelNamespaceConstant
+     * @param _baseAcl Address of base ACL app
+     * @param _permissionsCreator Entity that will be given permission over createPermission
+     */
+-    function initialize(IACL _baseAcl, address _permissionsCreator) public onlyInit {
+-        initialized();
++    function initialize(IACL _baseAcl, address _permissionsCreator, uint256 epoch) public onlyInit {
++        initialized(epoch);
+ 
+         // Set ACL base
+         _setApp(KERNEL_APP_BASES_NAMESPACE, KERNEL_DEFAULT_ACL_APP_ID, _baseAcl);
+ 
+         // Create ACL instance and attach it as the default ACL app
+         IACL acl = IACL(newAppProxy(this, KERNEL_DEFAULT_ACL_APP_ID));
+-        acl.initialize(_permissionsCreator);
++        acl.initialize(_permissionsCreator, epoch);
+         _setApp(KERNEL_APP_ADDR_NAMESPACE, KERNEL_DEFAULT_ACL_APP_ID, acl);
+ 
+         recoveryVaultAppId = KERNEL_DEFAULT_VAULT_APP_ID;
+diff --git a/node_modules/@aragon/os/scripts/deploy-apm.js b/node_modules/@aragon/os/scripts/deploy-apm.js
+index 22d79a6..026c0da 100644
+--- a/node_modules/@aragon/os/scripts/deploy-apm.js
++++ b/node_modules/@aragon/os/scripts/deploy-apm.js
+@@ -15,6 +15,8 @@ const defaultOwner = process.env.OWNER
+ const defaultDaoFactoryAddress = process.env.DAO_FACTORY
+ const defaultENSAddress = process.env.ENS
+ 
++const network = Number(process.env.NETWORK_ID || 1)
++
+ module.exports = async (
+   truffleExecCallback,
+   {
+@@ -61,7 +63,7 @@ module.exports = async (
+     ens = (await deployENS(null, { artifacts, owner, verbose: false })).ens
+     ensAddress = ens.address
+   } else {
+-    ens = ENS.at(ensAddress)
++    ens = await ENS.at(ensAddress)
+   }
+ 
+   log('ENS:', ensAddress)
+@@ -80,7 +82,7 @@ module.exports = async (
+ 
+   let daoFactory
+   if (daoFactoryAddress) {
+-    daoFactory = DAOFactory.at(daoFactoryAddress)
++    daoFactory = await DAOFactory.at(daoFactoryAddress)
+     const hasEVMScripts = await daoFactory.regFactory() !== ZERO_ADDR
+ 
+     log(`Using provided DAOFactory (with${hasEVMScripts ? '' : 'out' } EVMScripts):`, daoFactoryAddress)
+@@ -96,7 +98,7 @@ module.exports = async (
+     apmRepoBase.address,
+     ensSubdomainRegistrarBase.address,
+     ensAddress,
+-    '0x00'
++    ZERO_ADDR
+   )
+   await logDeploy(apmFactory, { verbose })
+ 
+@@ -118,11 +120,13 @@ module.exports = async (
+     }
+   }
+ 
+-  log('Deploying APM...')
+-  const receipt = await apmFactory.newAPM(tldHash, labelHash, owner)
++  const epoch = await web3.cfx.getEpochNumber() - 100;
++  log(`Deploying APM (epoch: ${epoch})...`)
++  const receipt = await apmFactory.newAPM(tldHash, labelHash, owner, epoch)
+ 
+   log('=========')
+-  const apmAddr = receipt.logs.filter(l => l.event == 'DeployAPM')[0].args.apm
++  const apmAddrHex = receipt.logs.filter(l => l.event == 'DeployAPM')[0].args.apm
++  const apmAddr = web3.cfxsdk.format.address(apmAddrHex, network)
+   log('# APM:')
+   log('Address:', apmAddr)
+   log('Transaction hash:', receipt.tx)
+@@ -135,7 +139,7 @@ module.exports = async (
+     return {
+       apmFactory,
+       ens,
+-      apm: APMRegistry.at(apmAddr),
++      apm: await APMRegistry.at(apmAddr),
+     }
+   }
+ }
+diff --git a/node_modules/@aragon/os/scripts/deploy-test-ens.js b/node_modules/@aragon/os/scripts/deploy-test-ens.js
+index 74efc32..111fc6f 100644
+--- a/node_modules/@aragon/os/scripts/deploy-test-ens.js
++++ b/node_modules/@aragon/os/scripts/deploy-test-ens.js
+@@ -5,6 +5,7 @@ const globalArtifacts = this.artifacts // Not injected unless called directly vi
+ const globalWeb3 = this.web3 // Not injected unless called directly via truffle
+ 
+ const defaultOwner = process.env.OWNER
++const network = Number(process.env.NETWORK_ID || 1)
+ 
+ module.exports = async (
+   truffleExecCallback,
+@@ -33,7 +34,8 @@ module.exports = async (
+   await logDeploy(factory, { verbose })
+   const receipt = await factory.newENS(owner)
+ 
+-  const ensAddr = receipt.logs.filter(l => l.event == 'DeployENS')[0].args.ens
++  const ensAddrHex = receipt.logs.filter(l => l.event == 'DeployENS')[0].args.ens
++  const ensAddr = web3.cfxsdk.format.address(ensAddrHex, network)
+   log('====================')
+   log('Deployed ENS:', ensAddr)
+ 
+@@ -44,7 +46,7 @@ module.exports = async (
+     truffleExecCallback()
+   } else {
+     return {
+-      ens: ENS.at(ensAddr),
++      ens: await ENS.at(ensAddr),
+       ensFactory: factory,
+     }
+   }

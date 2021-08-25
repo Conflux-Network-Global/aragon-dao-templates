@@ -77,8 +77,8 @@ contract TrustTemplate is BaseTemplate {
         _ensureMiniMeFactoryIsValid(_miniMeFactory);
     }
 
-    function prepareInstance() public returns (Kernel) {
-        (Kernel dao,) = _createDAO();
+    function prepareInstance(uint256 epoch) public returns (Kernel) {
+        (Kernel dao,) = _createDAO(epoch);
         MiniMeToken holdToken = _createToken(HOLD_TOKEN_NAME, HOLD_TOKEN_SYMBOL, HOLD_TOKEN_DECIMALS);
         MiniMeToken heirsToken = _createToken(HEIRS_TOKEN_NAME, HEIRS_TOKEN_SYMBOL, HEIRS_TOKEN_DECIMALS);
         _storeDaoCache(msg.sender, dao, holdToken, heirsToken);

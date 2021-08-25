@@ -52,7 +52,8 @@ contract CompanyBoardTemplate is BaseTemplate {
         string _shareTokenName,
         string _shareTokenSymbol,
         uint64[3] _shareVotingSettings,
-        uint64[3] _boardVotingSettings
+        uint64[3] _boardVotingSettings,
+        uint256 epoch
     )
         external
     {
@@ -62,7 +63,7 @@ contract CompanyBoardTemplate is BaseTemplate {
         MiniMeToken shareToken = _createToken(_shareTokenName, _shareTokenSymbol, SHARE_TOKEN_DECIMALS);
         MiniMeToken boardToken = _createToken(BOARD_TOKEN_NAME, BOARD_TOKEN_SYMBOL, BOARD_TOKEN_DECIMALS);
 
-        (Kernel dao, ACL acl) = _createDAO();
+        (Kernel dao, ACL acl) = _createDAO(epoch);
         Voting shareVoting = _installVotingApp(dao, shareToken, _shareVotingSettings);
         Voting boardVoting = _installVotingApp(dao, boardToken, _boardVotingSettings);
 

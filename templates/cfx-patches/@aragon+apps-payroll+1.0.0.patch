@@ -1,0 +1,15 @@
+diff --git a/node_modules/@aragon/apps-payroll/contracts/Payroll.sol b/node_modules/@aragon/apps-payroll/contracts/Payroll.sol
+index 66d0021..f09fd7b 100644
+--- a/node_modules/@aragon/apps-payroll/contracts/Payroll.sol
++++ b/node_modules/@aragon/apps-payroll/contracts/Payroll.sol
+@@ -147,8 +147,8 @@ contract Payroll is EtherTokenConstant, IForwarder, IsContract, AragonApp {
+      * @param _priceFeed Address of the price feed
+      * @param _rateExpiryTime Acceptable expiry time in seconds for the price feed's exchange rates
+      */
+-    function initialize(Finance _finance, address _denominationToken, IFeed _priceFeed, uint64 _rateExpiryTime) external onlyInit {
+-        initialized();
++    function initialize(Finance _finance, address _denominationToken, IFeed _priceFeed, uint64 _rateExpiryTime, uint256 epoch) external onlyInit {
++        initialized(epoch);
+ 
+         require(isContract(_finance), ERROR_FINANCE_NOT_CONTRACT);
+         finance = _finance;

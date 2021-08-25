@@ -1,24 +1,24 @@
 pragma solidity 0.4.24;
 
-import "@aragon/apps-agent/contracts/Agent.sol";
-import "@aragon/apps-vault/contracts/Vault.sol";
-import "@aragon/apps-voting/contracts/Voting.sol";
-import "@aragon/apps-payroll/contracts/Payroll.sol";
-import "@aragon/apps-finance/contracts/Finance.sol";
-import "@aragon/apps-token-manager/contracts/TokenManager.sol";
-import "@aragon/apps-survey/contracts/Survey.sol";
+import "@conflux-/aragon-apps-agent/contracts/Agent.sol";
+import "@conflux-/aragon-apps-vault/contracts/Vault.sol";
+import "@conflux-/aragon-apps-voting/contracts/Voting.sol";
+import "@conflux-/aragon-apps-payroll/contracts/Payroll.sol";
+import "@conflux-/aragon-apps-finance/contracts/Finance.sol";
+import "@conflux-/aragon-apps-token-manager/contracts/TokenManager.sol";
+import "@conflux-/aragon-apps-survey/contracts/Survey.sol";
 import "@aragon/apps-shared-minime/contracts/MiniMeToken.sol";
 
-import "@aragon/os/contracts/acl/ACL.sol";
-import "@aragon/os/contracts/apm/Repo.sol";
-import "@aragon/os/contracts/apm/APMNamehash.sol";
-import "@aragon/os/contracts/kernel/Kernel.sol";
-import "@aragon/os/contracts/lib/ens/ENS.sol";
-import "@aragon/os/contracts/lib/ens/PublicResolver.sol";
-import "@aragon/os/contracts/factory/DAOFactory.sol";
-import "@aragon/os/contracts/common/IsContract.sol";
-import "@aragon/os/contracts/common/Uint256Helpers.sol";
-import "@aragon/id/contracts/IFIFSResolvingRegistrar.sol";
+import "@conflux-/aragon-os/contracts/acl/ACL.sol";
+import "@conflux-/aragon-os/contracts/apm/Repo.sol";
+import "@conflux-/aragon-os/contracts/apm/APMNamehash.sol";
+import "@conflux-/aragon-os/contracts/kernel/Kernel.sol";
+import "@conflux-/aragon-os/contracts/lib/ens/ENS.sol";
+import "@conflux-/aragon-os/contracts/lib/ens/PublicResolver.sol";
+import "@conflux-/aragon-os/contracts/factory/DAOFactory.sol";
+import "@conflux-/aragon-os/contracts/common/IsContract.sol";
+import "@conflux-/aragon-os/contracts/common/Uint256Helpers.sol";
+import "@conflux-/aragon-id/contracts/IFIFSResolvingRegistrar.sol";
 
 
 contract BaseTemplate is APMNamehash, IsContract {
@@ -76,8 +76,8 @@ contract BaseTemplate is APMNamehash, IsContract {
     *      `_transferRootPermissionsFromTemplateAndFinalizeDAO()` helper to transfer the root
     *      permissions to the end entity in control of the organization.
     */
-    function _createDAO() internal returns (Kernel dao, ACL acl) {
-        dao = daoFactory.newDAO(this);
+    function _createDAO(uint256 epoch) internal returns (Kernel dao, ACL acl) {
+        dao = daoFactory.newDAO(this, epoch);
         emit DeployDao(address(dao));
         acl = ACL(dao.acl());
         _createPermissionForTemplate(acl, dao, dao.APP_MANAGER_ROLE());
@@ -122,8 +122,8 @@ contract BaseTemplate is APMNamehash, IsContract {
 
     /* AGENT */
 
-    function _installDefaultAgentApp(Kernel _dao) internal returns (Agent) {
-        bytes memory initializeData = abi.encodeWithSelector(Agent(0).initialize.selector);
+    function _installDefaultAgentApp(Kernel _dao, uint256 _epoch) internal returns (Agent) {
+        bytes memory initializeData = abi.encodeWithSelector(Agent(0).initialize.selector, _epoch);
         Agent agent = Agent(_installDefaultApp(_dao, AGENT_APP_ID, initializeData));
         // We assume that installing the Agent app as a default app means the DAO should have its
         // Vault replaced by the Agent. Thus, we also set the DAO's recovery app to the Agent.
@@ -131,8 +131,8 @@ contract BaseTemplate is APMNamehash, IsContract {
         return agent;
     }
 
-    function _installNonDefaultAgentApp(Kernel _dao) internal returns (Agent) {
-        bytes memory initializeData = abi.encodeWithSelector(Agent(0).initialize.selector);
+    function _installNonDefaultAgentApp(Kernel _dao, uint256 _epoch) internal returns (Agent) {
+        bytes memory initializeData = abi.encodeWithSelector(Agent(0).initialize.selector, _epoch);
         return Agent(_installNonDefaultApp(_dao, AGENT_APP_ID, initializeData));
     }
 
@@ -143,8 +143,8 @@ contract BaseTemplate is APMNamehash, IsContract {
 
     /* VAULT */
 
-    function _installVaultApp(Kernel _dao) internal returns (Vault) {
-        bytes memory initializeData = abi.encodeWithSelector(Vault(0).initialize.selector);
+    function _installVaultApp(Kernel _dao, uint256 _epoch) internal returns (Vault) {
+        bytes memory initializeData = abi.encodeWithSelector(Vault(0).initialize.selector, _epoch);
         return Vault(_installDefaultApp(_dao, VAULT_APP_ID, initializeData));
     }
 
@@ -154,8 +154,8 @@ contract BaseTemplate is APMNamehash, IsContract {
 
     /* VOTING */
 
-    function _installVotingApp(Kernel _dao, MiniMeToken _token, uint64[3] memory _votingSettings) internal returns (Voting) {
-        return _installVotingApp(_dao, _token, _votingSettings[0], _votingSettings[1], _votingSettings[2]);
+    function _installVotingApp(Kernel _dao, MiniMeToken _token, uint64[3] memory _votingSettings, uint256 _epoch) internal returns (Voting) {
+        return _installVotingApp(_dao, _token, _votingSettings[0], _votingSettings[1], _votingSettings[2], _epoch);
     }
 
     function _installVotingApp(
@@ -163,11 +163,12 @@ contract BaseTemplate is APMNamehash, IsContract {
         MiniMeToken _token,
         uint64 _support,
         uint64 _acceptance,
-        uint64 _duration
+        uint64 _duration,
+        uint256 _epoch
     )
         internal returns (Voting)
     {
-        bytes memory initializeData = abi.encodeWithSelector(Voting(0).initialize.selector, _token, _support, _acceptance, _duration);
+        bytes memory initializeData = abi.encodeWithSelector(Voting(0).initialize.selector, _token, _support, _acceptance, _duration, _epoch);
         return Voting(_installNonDefaultApp(_dao, VOTING_APP_ID, initializeData));
     }
 
@@ -187,8 +188,8 @@ contract BaseTemplate is APMNamehash, IsContract {
 
     /* SURVEY */
 
-    function _installSurveyApp(Kernel _dao, MiniMeToken _token, uint64 _minParticipationPct, uint64 _surveyTime) internal returns (Survey) {
-        bytes memory initializeData = abi.encodeWithSelector(Survey(0).initialize.selector, _token, _minParticipationPct, _surveyTime);
+    function _installSurveyApp(Kernel _dao, MiniMeToken _token, uint64 _minParticipationPct, uint64 _surveyTime, uint256 _epoch) internal returns (Survey) {
+        bytes memory initializeData = abi.encodeWithSelector(Survey(0).initialize.selector, _token, _minParticipationPct, _surveyTime, _epoch);
         return Survey(_installNonDefaultApp(_dao, SURVEY_APP_ID, initializeData));
     }
 
@@ -204,7 +205,8 @@ contract BaseTemplate is APMNamehash, IsContract {
         Finance _finance,
         address _denominationToken,
         IFeed _priceFeed,
-        uint64 _rateExpiryTime
+        uint64 _rateExpiryTime,
+        uint256 _epoch
     )
         internal returns (Payroll)
     {
@@ -213,7 +215,8 @@ contract BaseTemplate is APMNamehash, IsContract {
             _finance,
             _denominationToken,
             _priceFeed,
-            _rateExpiryTime
+            _rateExpiryTime,
+            _epoch
         );
         return Payroll(_installNonDefaultApp(_dao, PAYROLL_APP_ID, initializeData));
     }
@@ -262,8 +265,8 @@ contract BaseTemplate is APMNamehash, IsContract {
 
     /* FINANCE */
 
-    function _installFinanceApp(Kernel _dao, Vault _vault, uint64 _periodDuration) internal returns (Finance) {
-        bytes memory initializeData = abi.encodeWithSelector(Finance(0).initialize.selector, _vault, _periodDuration);
+    function _installFinanceApp(Kernel _dao, Vault _vault, uint64 _periodDuration, uint256 _epoch) internal returns (Finance) {
+        bytes memory initializeData = abi.encodeWithSelector(Finance(0).initialize.selector, _vault, _periodDuration, _epoch);
         return Finance(_installNonDefaultApp(_dao, FINANCE_APP_ID, initializeData));
     }
 
@@ -290,13 +293,14 @@ contract BaseTemplate is APMNamehash, IsContract {
         Kernel _dao,
         MiniMeToken _token,
         bool _transferable,
-        uint256 _maxAccountTokens
+        uint256 _maxAccountTokens,
+        uint256 _epoch
     )
         internal returns (TokenManager)
     {
         TokenManager tokenManager = TokenManager(_installNonDefaultApp(_dao, TOKEN_MANAGER_APP_ID));
         _token.changeController(tokenManager);
-        tokenManager.initialize(_token, _transferable, _maxAccountTokens);
+        tokenManager.initialize(_token, _transferable, _maxAccountTokens, _epoch);
         return tokenManager;
     }
 

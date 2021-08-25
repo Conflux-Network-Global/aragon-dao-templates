@@ -10,15 +10,17 @@ module.exports = web3 => {
   }
 
   async function getNetworkName() {
-    const id = await getNetworkId()
-    const { networks } = require('@aragon/os/truffle-config')
-    const networkName = Object.keys(networks).find(name => networks[name].network_id == id)
-    return networkName || DEFAULT_NETWORK
+    // const id = await getNetworkId()
+    // const { networks } = require('@aragon/os/truffle-config')
+    // const networkName = Object.keys(networks).find(name => networks[name].network_id == id)
+    // return networkName || DEFAULT_NETWORK
+    return "cfx-testnet"
   }
 
   async function isLocalNetwork() {
-    const networkName = await getNetworkName()
-    return LOCAL_NETWORKS.includes(networkName)
+    // const networkName = await getNetworkName()
+    // return LOCAL_NETWORKS.includes(networkName)
+    return true
   }
 
   return {

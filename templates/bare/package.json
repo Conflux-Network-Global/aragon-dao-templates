@@ -5,6 +5,7 @@
   "author": "Aragon Association <legal@aragon.org>",
   "license": "GPL-3.0-or-later",
   "scripts": {
+    "postinstall": "cp -r ../cfx-patches ./patches && patch-package",
     "prepublishOnly": "npm run compile && npm run abi:extract -- --no-compile",
     "abi:extract": "truffle-extract --output abi/ --keys abi",
     "compile": "truffle compile --all",
@@ -34,7 +35,10 @@
     "@aragon/os": "4.3.0",
     "@aragon/id": "2.0.3",
     "@aragon/apps-shared-minime": "^1.0.0",
-    "@aragon/templates-shared": "^1.0.0-rc.1"
+    "@aragon/templates-shared": "^1.0.0-rc.1",
+    "@aragon/truffle-config-v4": "^1.0.1",
+    "dotenv": "^8.2.0",
+    "patch-package": "^6.4.6"
   },
   "devDependencies": {
     "@aragon/apps-agent": "^2.0.0",

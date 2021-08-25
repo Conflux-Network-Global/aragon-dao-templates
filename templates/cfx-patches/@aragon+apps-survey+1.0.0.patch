@@ -1,0 +1,21 @@
+diff --git a/node_modules/@aragon/apps-survey/contracts/Survey.sol b/node_modules/@aragon/apps-survey/contracts/Survey.sol
+index d44dde9..f7d04bc 100644
+--- a/node_modules/@aragon/apps-survey/contracts/Survey.sol
++++ b/node_modules/@aragon/apps-survey/contracts/Survey.sol
+@@ -93,13 +93,14 @@ contract Survey is AragonApp {
+     function initialize(
+         MiniMeToken _token,
+         uint64 _minParticipationPct,
+-        uint64 _surveyTime
++        uint64 _surveyTime,
++        uint256 epoch
+     )
+         external
+         onlyInit
+         acceptableMinParticipationPct(_minParticipationPct)
+     {
+-        initialized();
++        initialized(epoch);
+ 
+         token = _token;
+         minParticipationPct = _minParticipationPct;
