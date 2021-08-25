@@ -85,7 +85,7 @@ module.exports = class TemplateDeployer {
     } else {
       if (await this._isAPMRegistered()) {
         const apmAddress = await this._fetchRegisteredAPM()
-        this.log(`Using APM registered at aragonpm.eth: ${apmAddress}`)
+        this.log(`Using APM registered at aragonpm.cfx: ${apmAddress}`)
         this.apm = await APM.at(apmAddress)
       } else if (await this.isLocal()) {
         await deployAPM(null, { artifacts: this.artifacts, web3: this.web3, owner: this.owner, ensAddress: this.ens.address, verbose: this.verbose })
@@ -94,7 +94,7 @@ module.exports = class TemplateDeployer {
         this.log('Deployed APM:', apmAddress)
         this.apm = await APM.at(apmAddress)
       } else {
-        this.error('Please provide an APM instance or make sure there is one registered under "aragonpm.eth", aborting.')
+        this.error('Please provide an APM instance or make sure there is one registered under "aragonpm.cfx", aborting.')
       }
     }
   }
@@ -107,7 +107,7 @@ module.exports = class TemplateDeployer {
     } else {
       if (await this._isAragonIdRegistered()) {
         const aragonIDAddress = await this._fetchRegisteredAragonID()
-        this.log(`Using aragonID registered at aragonid.eth: ${aragonIDAddress}`)
+        this.log(`Using aragonID registered at aragonid.cfx: ${aragonIDAddress}`)
         this.aragonID = await FIFSResolvingRegistrar.at(aragonIDAddress)
       } else if (await this.isLocal()) {
         await deployAragonID(null, { artifacts: this.artifacts, web3: this.web3, owner: this.owner, ensAddress: this.ens.address, verbose: this.verbose })
@@ -116,7 +116,7 @@ module.exports = class TemplateDeployer {
         this.log('Deployed aragonID:', aragonIDAddress)
         this.aragonID = await FIFSResolvingRegistrar.at(aragonIDAddress)
       } else {
-        this.error('Please provide an aragon ID instance or make sure there is one registered under "aragonid.eth", aborting.')
+        this.error('Please provide an aragon ID instance or make sure there is one registered under "aragonid.cfx", aborting.')
       }
     }
   }
@@ -145,7 +145,7 @@ module.exports = class TemplateDeployer {
   }
 
   async _fetchRegisteredAPM() {
-    const aragonPMHash = namehash('aragonpm.eth')
+    const aragonPMHash = namehash('aragonpm.cfx')
     const PublicResolver = this.artifacts.require('PublicResolver')
 
     const resolverAddrHex = await this.ens.resolver(aragonPMHash)
@@ -158,7 +158,7 @@ module.exports = class TemplateDeployer {
   }
 
   async _fetchRegisteredAragonID() {
-    const aragonIDHash = namehash('aragonid.eth')
+    const aragonIDHash = namehash('aragonid.cfx')
     const onwerHex = await this.ens.owner(aragonIDHash)
     const owner = this.web3.cfxsdk.format.address(onwerHex, network)
     return owner
@@ -172,25 +172,25 @@ module.exports = class TemplateDeployer {
   async _registerPackage(name, instance) {
     if (this.options.register) {
       const epoch = await this.web3.cfx.getEpochNumber() - 100;
-      this.log(`Registering package for ${instance.constructor.contractName} as "${name}.aragonpm.eth" (${instance.address}) with epoch ${epoch}`)
-      return this.apm.newRepoWithVersion(name, this.owner, [1, 0, 0], instance.address, '0x', epoch)
+      this.log(`Registering package for ${instance.constructor.contractName} as "${name}.aragonpm.cfx" (${instance.address}) with epoch ${epoch}`)
+      return this.apm.newRepoWithVersion(name, this.owner, [1, 0, 0], instance.address, '0x', epoch, { from: this.owner })
     }
   }
 
   async _isAPMRegistered() {
-    return this._isRepoRegistered(namehash('aragonpm.eth'))
+    return this._isRepoRegistered(namehash('aragonpm.cfx'))
   }
 
   async _isAragonIdRegistered() {
-    return this._isRepoRegistered(namehash('aragonid.eth'))
+    return this._isRepoRegistered(namehash('aragonid.cfx'))
   }
 
   async _isPackageRegistered(name) {
-    return this._isRepoRegistered(namehash(`${name}.aragonpm.eth`))
+    return this._isRepoRegistered(namehash(`${name}.aragonpm.cfx`))
   }
 
   async _isRepoRegistered(hash) {
-    const owner = await this.ens.owner(hash)
+    const owner =  this.web3.cfxsdk.format.hexAddress(await this.ens.owner(hash))
     return owner !== '0x0000000000000000000000000000000000000000' && owner !== '0x'
   }
 

@@ -1,7 +1,7 @@
 pragma solidity 0.4.24;
 
-import "@aragon/templates-shared/contracts/TokenCache.sol";
-import "@aragon/templates-shared/contracts/BaseTemplate.sol";
+import "@conflux-/aragon-templates-shared/contracts/TokenCache.sol";
+import "@conflux-/aragon-templates-shared/contracts/BaseTemplate.sol";
 
 
 contract CompanyTemplate is BaseTemplate, TokenCache {

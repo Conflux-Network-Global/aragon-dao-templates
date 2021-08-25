@@ -28,6 +28,11 @@
       "network": "rinkeby",
       "registry": "0xfe03625ea880a8cba336f9b5ad6e15b0a3b5a939",
       "wsRPC": "wss://rinkeby.eth.aragon.network/ws"
+    },
+    "cfx-testnet": {
+      "appName": "company-template.aragonpm.cfx",
+      "network": "cfx-testnet",
+      "registry": "cfxtest:ach1mzf802151fbar7xuj9f2fm7ffdak4jhaj723up"
     }
   },
   "roles": [],
